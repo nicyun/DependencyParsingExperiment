@@ -39,46 +39,68 @@ def Eisner(g):
 				f[s][t][1][0] = max(f[s][q][1][1] + f[q][t][1][0], f[s][t][1][0])
 	return decode(f, 0, n - 1, 1, 0, g)
 				
-def predict(model, words):
+def predict(w_model, t_model, words, tags):
+#pre-defined interpolation value ??
+	mu = 0.99
 #build graph
 	tmp = [0] * len(words)
 	g = [list(tmp) for i in xrange(len(words))]
 	for i in xrange(len(words)):
-		if(words[i] in model):
+		if(words[i] in w_model):
 			for j in xrange(len(words)):
 				if(i == j):
 					continue
-				if(words[j] in model[words[i]]):
-					g[i][j] = model[words[i]][words[j]]
+				if(words[j] in w_model[words[i]]):
+					g[i][j] += w_model[words[i]][words[j]] * mu
+		if(tags[i] in t_model):
+			for j in xrange(len(tags)):
+				if(i == j):
+					continue
+				if(tags[j] in t_model[tags[i]]):
+					g[i][j] += t_model[tags[i]][tags[j]] * (1 - mu)
 #test graph??
 #estimate MST
 	return Eisner(g)
 
 if __name__ == "__main__":
 #load model
-	model = {}
-	for line in open(sys.argv[1]):
-		line = line.strip().split('\t')
-		model[line[0]] = {}
+	w_model = {}
+	t_model = {}
+	fin = open(sys.argv[1])
+	tot = int(fin.readline().strip())
+	cnt = int(fin.readline().strip())
+	for k in xrange(cnt):
+		line = fin.readline().strip().split('\t')
+		w_model[line[0]] = {}
 		for i in xrange(1, len(line)):
 			pair = line[i].strip().split()
-			model[line[0]][pair[0]] = int(pair[1])
+			w_model[line[0]][pair[0]] = float(pair[1]) / tot
+	cnt = int(fin.readline().strip())
+	for k in xrange(cnt):
+		line = fin.readline().strip().split('\t')
+		t_model[line[0]] = {}
+		for i in xrange(1, len(line)):
+			pair = line[i].strip().split()
+			t_model[line[0]][pair[0]] = float(pair[1]) / tot
 #read sentence
 	word = ["ROOT"]
+	tag = ["ROOT"]
 	lines = []
 	res = []
 	for line in open(sys.argv[2]):
 		line = line.strip().split()
 		if(len(line) == 0):
-			head = predict(model, word)
+			head = predict(w_model, t_model, word, tag)
 			for line in lines:
 				line[6] = str(head[int(line[0])])
 				line[7] = '-'
 				res.append('\t'.join(line) + '\n')
 			res.append('\n')
 			word = ["ROOT"]
+			tag = ["ROOT"]
 			lines = []
 			continue
 		word.append(line[1])
+		tag.append(line[3])
 		lines.append(line)
 	open(sys.argv[3], 'w').writelines(res)
