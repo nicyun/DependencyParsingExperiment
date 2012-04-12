@@ -4,10 +4,21 @@
 #include <vector>
 
 #include <cassert>
+#include <cstring>
 
 #include "DependencyPaser.hpp"
 
 using namespace std;
+
+DependencyPaser::DependencyPaser()
+{
+	env = new Environment(1, 1, 1);
+}
+
+DependencyPaser::~DependencyPaser()
+{
+	delete env;
+}
 
 bool DependencyPaser::loadModel(const char * file)
 {
@@ -28,7 +39,7 @@ bool DependencyPaser::loadModel(const char * file)
 		int wi = _getWordID(word);
 		while(sin >> word >> value){
 			int wj = _getWordID(word);
-			env.addWordStat(wi, wj, value / tot);
+			env->addWordStat(wi, wj, value / tot);
 		}
 		cout<<".";
 	}
@@ -45,7 +56,7 @@ bool DependencyPaser::loadModel(const char * file)
 		int wi = _getWordID(word);
 		while(sin >> word >> value){
 			int wj = _getWordID(word);
-			env.addPosStat(wi, wj, value / tot);
+			env->addPosStat(wi, wj, value / tot);
 		}
 		cout<<"*";
 	}
@@ -106,7 +117,7 @@ double DependencyPaser::predict(const vector<string> & words,
 }
 
 bool DependencyPaser::_decode(
-		const vector<vector<vector<vector<double> > > > & f,
+		const double f[maxLen][maxLen][2][2], 
 		int s, int t, int d, int c,
 		const vector<vector<double> > & g,
 		std::vector<int> & father)
@@ -119,6 +130,7 @@ bool DependencyPaser::_decode(
 				}
 				_decode(f, s, q, d, d, g, father);
 				_decode(f, q, t, d, 1 - d, g, father);
+				break;
 			}
 		}
 	}
@@ -133,6 +145,7 @@ bool DependencyPaser::_decode(
 				father[j] = i;
 				_decode(f, s, q, 1, 0, g, father);
 				_decode(f, q + 1, t, 0, 0, g, father);
+				break;
 			}
 		}
 	}
@@ -140,11 +153,13 @@ bool DependencyPaser::_decode(
 }
 
 double DependencyPaser::_eisner(
-		const std::vector<std::vector<double> > & graph,
-		std::vector<int> & father)
+		const vector<vector<double> > & graph,
+		vector<int> & father)
 {
 	int n = graph.size();
-	vector<vector<vector<vector<double> > > > f(n, vector<vector<vector<double> > >(n, vector<vector<double> >(2, vector<double>(2, 0))));
+	assert(n < maxLen);
+	double f[maxLen][maxLen][2][2];
+	memset(f, 0, sizeof(f));
 	for(int k = 1; k < n; k++){
 		for(int s = 0; s < n - k; s++){
 			int t = s + k;
@@ -178,27 +193,29 @@ bool DependencyPaser::_buildGraph(const vector<string> & words,
 {	
 	vector<WordAgent> wordAgents;
 	Simulator simulator;
-	env.clearAgents();
+	env->resetAgents();
 	for(size_t i = 0; i < words.size(); i++){
 		vector<int> attr;
 		attr.push_back(_getWordID(words[i])); 
 		attr.push_back(_getWordID(postags[i]));
-		wordAgents.push_back(WordAgent());
-		wordAgents[i].init(i, attr, (const Environment *)&env);
+		int numClone = env->getNumClone();
+		pair<int, int> pos = env->getRandomPosition();
+		for(int j = 0; j < numClone; j++){
+			wordAgents.push_back(WordAgent(i, attr, env, pos));
+		}
 	}
-	// this part is triky, easy to get a bug
 	// vector allocates new memeries sometimes.
 	// so this {for} and the previous {for} could not be merged
-	for(size_t i = 0; i < words.size(); i++){
+	for(size_t i = 0; i < wordAgents.size(); i++){
 		WordAgent * pWordAgent = &wordAgents[i];
 		simulator.addPWordAgent(pWordAgent);
-		env.addPWordAgent(pWordAgent);
+		env->addPWordAgent(pWordAgent);
 	}
 	simulator.run();
 	graph.clear();
-	int n = wordAgents.size();
+	int n = words.size();
 	graph.resize(n, vector<double>(n, 0));
-	for(int k = 0; k < n; k++){
+	for(size_t k = 0; k < wordAgents.size(); k++){
 		int i = wordAgents[k].getID();
 		map<int, double> & affinityTo = wordAgents[k].getAffinityTo();
 		for(map<int, double>::iterator it = affinityTo.begin();

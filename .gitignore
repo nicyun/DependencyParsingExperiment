@@ -1,3 +1,5 @@
 result/*
 bin/*
 obj/*
+run.sh
+eval.sh

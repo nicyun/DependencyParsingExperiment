@@ -9,9 +9,13 @@
 
 class DependencyPaser{
 private:
-	Environment env;
+	Environment * env;
 	std::map<std::string, int> strMap;
+private:
+	static const int maxLen = 128;
 public:
+	DependencyPaser();
+	~DependencyPaser();
 	bool loadModel(const char * file);
 	double predict(const std::vector<std::string> & words,
 			const std::vector<std::string> & postags,
@@ -25,7 +29,7 @@ private:
 	double _eisner(const std::vector<std::vector<double> > & graph, 
 			std::vector<int> & father);
 	bool _decode(
-			const std::vector<std::vector<std::vector<std::vector<double> > > > & f, 
+			const double f[maxLen][maxLen][2][2],
 			int s, int t, int d, int c, 
 			const std::vector<std::vector<double> > & graph, 
 			std::vector<int> & father);
