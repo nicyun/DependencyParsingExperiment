@@ -18,6 +18,9 @@ bool DependencyPaser::loadModel(const char * file)
 	fin >> tot;
 	fin >> numWord;
 	getline(fin, line);
+	cout<<numWord<<endl;
+	int a;
+	cin>>a;
 	while(numWord--){
 		getline(fin, line);
 		istringstream sin(line);
@@ -27,8 +30,13 @@ bool DependencyPaser::loadModel(const char * file)
 			int wj = _getWordID(word);
 			env.addWordStat(wi, wj, value / tot);
 		}
+		cout<<".";
 	}
+	cout<<endl;
+	cout<<"state word..."<<endl;
 	fin >> numPos;
+	cout<<numPos<<endl;
+	cin>>a;
 	getline(fin, line);
 	while(numPos--){
 		getline(fin, line);
@@ -39,7 +47,10 @@ bool DependencyPaser::loadModel(const char * file)
 			int wj = _getWordID(word);
 			env.addPosStat(wi, wj, value / tot);
 		}
+		cout<<"*";
 	}
+	cout<<endl;
+	cout<<"state pos..."<<endl;
 	return true;
 }
 
