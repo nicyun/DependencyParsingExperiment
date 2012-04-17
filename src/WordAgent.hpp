@@ -13,29 +13,21 @@ class WordAgent{
 private:
 	int ID;
 	std::pair<int, int> position;
-	std::vector<int> attrs;
+	std::map<int, double> domFeature;
+	std::map<int, double> recFeature;
 	Environment * env;
-	std::map<int, double> affinityTo;
-	std::map<int, double> affinityFrom;
 	std::queue<int> orders;
 public:
 	WordAgent(int id, 
-			const std::vector<int> & attributes, 
 			Environment * environment,
 			const std::pair<int, int> & pos);
-	bool initOrder();
-	double affinityFromFather(WordAgent * pFather);
-	double affinityToSon(WordAgent * pSon);
-	bool getAttributes(std::vector<int> & attr);
-	bool runByOrder();
 	bool run();
 	int getID();
-	std::map<int, double> & getAffinityTo();
-	std::map<int, double> & getAffinityFrom();
 	std::pair<int, int> getPosition() const;
 private:
-	bool _calcAffinities();
 	bool _doMove();
+	bool _interact();
+	bool _mutate();
 };
 
 #endif

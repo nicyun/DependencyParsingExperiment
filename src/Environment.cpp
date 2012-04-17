@@ -7,8 +7,8 @@
 
 using namespace std;
 
-Environment::Environment(int r, int c, int cnt)
-		: rows(r), cols(c), numClone(cnt)
+Environment::Environment(int r, int c)
+		: rows(r), cols(c)
 {
 	resetAgents();
 }
@@ -16,29 +16,6 @@ Environment::Environment(int r, int c, int cnt)
 int Environment::_calcSub(const pair<int, int> & pos) const
 {
 	return pos.first * cols + pos.second;
-}
-
-double Environment::calcAffinity(const vector<int> & attrs1, 
-		const vector<int> & attrs2) const{
-	double res = 0;
-	map<pair<int, int>, double>::const_iterator it;
-	it = wordStat.find(make_pair(attrs1[0], attrs2[0]));
-	if(it != wordStat.end()) res += it->second * 0.50;
-	it = posStat.find(make_pair(attrs1[1], attrs2[1]));
-	if(it != posStat.end()) res += it->second * 0.50;
-	return res;
-}
-
-bool Environment::addWordStat(int father, int son, double value)
-{
-	wordStat[make_pair(father, son)] = value;
-	return true;
-}
-
-bool Environment::addPosStat(int father, int son, double value)
-{
-	posStat[make_pair(father, son)] = value;
-	return true;
 }
 
 bool Environment::addPWordAgent(WordAgent * pWordAgent)
@@ -77,11 +54,6 @@ bool Environment::getNearbyAgents(const WordAgent * pWordAgent,
 		}
 	}
 	return true;
-}
-
-int Environment::getNumClone()
-{
-	return numClone;
 }
 
 pair<int, int> Environment::getRandomPosition()
