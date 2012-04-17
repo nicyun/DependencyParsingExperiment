@@ -3,36 +3,26 @@
 
 #include <map>
 
-#include "Simulator.hpp"
-#include "WordAgent.hpp"
-#include "Environment.hpp"
+#include "Trainer.hpp"
+#include "Predictor.hpp"
+#include "Model.hpp"
+#include "Sentence.hpp"
 
 class DependencyPaser{
 private:
-	Environment * env;
-	std::map<std::string, int> strMap;
-private:
-	static const int maxLen = 128;
+	Model * pModel;
+	Trainer * pTrainer;
+	Predictor * pPredictor;
 public:
 	DependencyPaser();
 	~DependencyPaser();
 	bool loadModel(const char * file);
-	double predict(const std::vector<std::string> & words,
-			const std::vector<std::string> & postags,
-			std::vector<int> & fathers);
+	bool saveModel(const char * file);
+	bool trainFile(const char * file);
+	bool rfTrain(const Sentence & sen, const std::vector<int> & fa);
+	double predict(const Sentence & sen, std::vector<int> & fa);
 	bool predictFile(const char * testFile, const char * outFile);
 private:
-	int _getWordID(const std::string & word);
-	bool _buildGraph(const std::vector<std::string> & words,
-			const std::vector<std::string> & postags, 
-			std::vector<std::vector<double> > & graph);
-	double _eisner(const std::vector<std::vector<double> > & graph, 
-			std::vector<int> & father);
-	bool _decode(
-			const double f[maxLen][maxLen][2][2],
-			int s, int t, int d, int c, 
-			const std::vector<std::vector<double> > & graph, 
-			std::vector<int> & father);
 };
 
 #endif
