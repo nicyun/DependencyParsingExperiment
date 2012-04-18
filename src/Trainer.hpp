@@ -11,6 +11,7 @@ private:
 public:
 	Trainer(Model * pm);
 	bool rfTrain(const Sentence & sen, const std::vector<int> & fa);
+	bool onlineLearning(const std::vector<Sentence> & vsen, const std::vector<std::vector<int> > & vfa );
 };
 
 #endif
