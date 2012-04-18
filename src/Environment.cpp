@@ -74,3 +74,4 @@ bool Environment::yInRange(int y)
 {
 	return y >= 0 && y < cols;
 }
+

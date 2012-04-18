@@ -44,42 +44,6 @@ bool DependencyPaser::rfTrain(const Sentence & sen,
 bool DependencyPaser::trainFile(const char * file)
 {
 	ifstream fin(file);
-<<<<<<< HEAD
-	int tot, numWord, numPos;
-	string word, line;
-	double value;
-	fin >> tot;
-	fin >> numWord;
-	getline(fin, line);
-	cout<<numWord<<endl;
-	int a;
-	cin>>a;
-	while(numWord--){
-		getline(fin, line);
-		istringstream sin(line);
-		sin >> word;
-		int wi = _getWordID(word);
-		while(sin >> word >> value){
-			int wj = _getWordID(word);
-			env->addWordStat(wi, wj, value / tot);
-		}
-		cout<<".";
-	}
-	cout<<endl;
-	cout<<"state word..."<<endl;
-	fin >> numPos;
-	cout<<numPos<<endl;
-	cin>>a;
-	getline(fin, line);
-	while(numPos--){
-		getline(fin, line);
-		istringstream sin(line);
-		sin >> word;
-		int wi = _getWordID(word);
-		while(sin >> word >> value){
-			int wj = _getWordID(word);
-			env->addPosStat(wi, wj, value / tot);
-=======
 	string line;
 	vector<vector<string> > senes;
 	while(getline(fin, line)){
@@ -103,12 +67,10 @@ bool DependencyPaser::trainFile(const char * file)
 				item.push_back(tmp);
 			}
 			senes.push_back(item);
->>>>>>> upstream/master
+
 		}
-		cout<<"*";
 	}
-	cout<<endl;
-	cout<<"state pos..."<<endl;
+
 	return true;
 }
 
@@ -156,4 +118,5 @@ double DependencyPaser::predict(const Sentence & sen, vector<int> & fa)
 {
 	return pPredictor->predict(sen, fa);
 }
+
 
