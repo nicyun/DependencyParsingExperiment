@@ -70,7 +70,7 @@ pair<int, int> WordAgent::getPosition() const
 
 bool WordAgent::_mutate()
 {
-	if(getStatus() == MUTATE)
+	if(getStatus() == MATCH)
 	{
 		tmpFeature = domFeature;
 		bool flag = false;
@@ -103,8 +103,12 @@ bool WordAgent::_mutate()
 			d = 0.0;
 		}
 
-		if(flag)
+		/*calculating affinity after mutation*/
+		double mutatedAffinity = _calMutatedAffinity(agFeature);
+
+		if(flag && _calFeedback() && (mutatedAffinity > agAffinity))
 		{
+			setStatus(MUTATE);
 			return true;
 		}
 	}
@@ -131,6 +135,22 @@ double WordAgent::_calAffinity(std::vector<int> receptor)
 	return sum;
 }
 
+double WordAgent::_calMutatedAffinity(std::vector<int> receptor)
+{
+	/*calculating affinity after mutation*/
+	double sum = 0.0;
+	std::map<int, double>::iterator it;
+	for(size_t i = 0; i < receptor.size(); i++)
+	{
+		it = tmpFeature.find(receptor[i]);
+		if(it != tmpFeature.end())
+		{
+			sum += tmpFeature[receptor[i]];
+		}
+	}
+	return sum;
+}
+
 int WordAgent::getStatus()
 {
 	return status;
@@ -144,9 +164,10 @@ void WordAgent::setStatus(int s)
 bool WordAgent::interact(std::vector<int> receptor)
 {
 	/*interaction between antigen and B cell*/
+	this->agFeature = receptor;
 	if(_calAffinity(receptor) > AFFINITY)
 	{
-		setStatus(MUTATE);
+		setStatus(MATCH);
 	}
 
 	/*interaction between B cells*/
@@ -228,56 +249,52 @@ bool WordAgent::select()
 		(1) agents generating negative feedbacks of depedency parsing are died;
 		(2) agents with lower affinities are died when competing;
 		*/
-		if(_getFeedback())
+		/*gain neighbours*/
+		std::vector<WordAgent *> nearAgents;
+		if(env->getNearbyAgents(this, nearAgents))
 		{
-			/*gain neighbours*/
-			std::vector<WordAgent *> nearAgents;
-			if(env->getNearbyAgents(this, nearAgents))
+			for(size_t i = 0; i < nearAgents.size(); i++)
 			{
-				double agAffinity = 0.0;
-				for(size_t i = 0; i < nearAgents.size(); i++)
+				if(nearAgents[i]->getStatus() == MUTATE)
 				{
-					if(nearAgents[i]->getStatus() == MUTATE)
+					/*comparing feedbacks*/
+					if(_cmpFeedback(feedback,nearAgents[i]->getFeedback()))
 					{
-						if(agAffinity < nearAgents[i]->getAgAffinity())
-						{
-							setStatus(DIE);
-						}
-						else
-						{
-							nearAgents[i]->setStatus(DIE);
-						}
+						setStatus(DIE);
+					}
+					else
+					{
+						nearAgents[i]->setStatus(DIE);
 					}
 				}
-
-				if(getStatus() == MUTATE)
-				{
-					/*communicating with local environment*/
-					domFeature = tmpFeature;
-					_communicate();	
-				}
 			}
-		}
-		else
-		{
-			setStatus(DIE);
+               		/*communicating with local environment to insure global optimization*/
+                	_communicate();
 		}
 	}
 
 	return true;
 }
 
-bool WordAgent::_getFeedback()
+bool WordAgent::_calFeedback()
+{
+	return true;
+}
+std::pair<int, double> WordAgent::getFeedback() const
 {
 	/*gain feedback of dependency parsing by local environment*/
 
-	return true;
+
+	return this->feedback;
 }
 
 void WordAgent::_communicate()
 {
 	/*updating information of local environment*/
-	env->updateLocalEnv(this);
+	if(env->update(this))
+	{
+	    setStatus(MATURE);
+	}
 }
 
 double WordAgent::getAgAffinity()
@@ -315,7 +332,7 @@ bool WordAgent::_getStimulus()
 			}
 		}
 	}
-	
+
 	return true;
 }
 
@@ -351,8 +368,8 @@ double WordAgent::_calAffinity(std::map<int, double> receptor)
 		if(it != receptor.end())
 		{
 			sum += receptor[recFeature[i]];
-		}		
-	} 
+		}
+	}
 
 	return sum;
 }
@@ -360,4 +377,37 @@ double WordAgent::_calAffinity(std::map<int, double> receptor)
 std::map<int, double> WordAgent::getDomReceptor() const
 {
 	return domFeature;
+}
+
+bool WordAgent::_updateSelf()
+{
+	/*updating information of self receptor including:
+	domFeature
+	*/
+	std::map<int, double> rec = env->getInfor(this);
+	std::map<int, double>::iterator it;
+	std::map<int, double>::iterator tmp;
+	for(it = rec.begin(); it != rec.end(); it++)
+	{
+		tmp = domFeature.find(it->first);
+		if(tmp != domFeature.end())
+		{
+			if(domFeature[it->first] != it->second)
+			{
+				domFeature[it->first] = it->second;
+			}
+		}
+	}
+
+	return true;
+}
+
+bool WordAgent::_cmpFeedback(std::pair<int, double> sp, std::pair<int, double> dp)
+{
+	if(sp.first < dp. second)
+	{
+		return false;
+	}
+
+	return true;
 }

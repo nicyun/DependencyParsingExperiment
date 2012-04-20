@@ -9,13 +9,14 @@
 
 /*Status of Word-agent*/
 #define ACTIVE		1	/*active*/
-#define MUTATE		2	/*mutate*/
-#define CLONE		3	/*clone*/
-#define MATURE		4	/*mature*/
+#define MATCH		2	/*match*/
+#define MUTATE		3	/*mutate*/
+#define CLONE		4	/*clone*/
+#define MATURE		5	/*mature*/
 #define DIE		6	/*die*/
 
 #define AFFINITY	0.8	/*affinity threshold for adaptive recognition*/
-#define STIMULUS	0.8	/*stimulus threshold*/
-#define SUPPRESS	0.8	/*suppress threshold*/
+#define STIMULUS	0.0	/*stimulus threshold*/
+#define SUPPRESS	0.0	/*suppress threshold*/
 
 #endif
