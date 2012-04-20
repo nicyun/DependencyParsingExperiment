@@ -14,5 +14,6 @@ int main(int argc, char * argv[])
 	cout << "model loaded!" << endl;
 	dp.predictFile(argv[2], argv[3]);
 	cout << "predicted OK" << endl;
+
 	return 0;
 }

@@ -12,8 +12,10 @@
 #define MUTATE		2	/*mutate*/
 #define CLONE		3	/*clone*/
 #define MATURE		4	/*mature*/
+#define DIE		6	/*die*/
 
 #define AFFINITY	0.8	/*affinity threshold for adaptive recognition*/
 #define STIMULUS	0.8	/*stimulus threshold*/
 #define SUPPRESS	0.8	/*suppress threshold*/
+
 #endif

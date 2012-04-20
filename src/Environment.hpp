@@ -23,6 +23,7 @@ public:
 	std::pair<int, int> getRandomPosition();
 	bool xInRange(int x);
 	bool yInRange(int y);
+	bool updateLocalEnv(WordAgent * pWordAgent);
 private:
 	int _calcSub(const std::pair<int, int> & pos) const;
 };

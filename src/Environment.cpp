@@ -75,3 +75,8 @@ bool Environment::yInRange(int y)
 	return y >= 0 && y < cols;
 }
 
+bool Environment::updateLocalEnv(WordAgent * pWordAgent)
+{
+
+	return true;
+}
