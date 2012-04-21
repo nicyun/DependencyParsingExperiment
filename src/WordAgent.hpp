@@ -24,8 +24,8 @@ private:
 	double recAffinity;
 	double agAffinity;
 	int status;
-	int stimulus;
-	int suppression;
+	double stimulus;
+	double suppression;
 	int concentration;
 	std::pair<int, double> feedback;
 public:

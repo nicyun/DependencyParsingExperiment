@@ -185,16 +185,16 @@ bool WordAgent::_clone()
 		setStatus(MATURE);
 		double alpha = 1.0 + agAffinity;
 
-		int N = (int)(alpha*concentration) + stimulus - suppression;
+		int N = (int)(alpha*concentration + stimulus - suppression);
 		if(N > 0)
 		{
 			/*cloning*/
 			for(int i = 0; i < N; i++)
 			{
 				/*new agent by cloning: status is MEMORY*/
-
+				WordAgent * wa = new WordAgent(ID,env,position);
 				/*add agent to environment*/
-
+				env->addPWordAgent(wa);
 			}
 
 			return true;
@@ -209,7 +209,7 @@ bool WordAgent::_regulate()
 	/*regulating by idiotype immune network as equa:
 	N = concentration + stimulus - suppression
 	*/
-	int N = concentration + stimulus - suppression;
+	int N = concentration + (int)(stimulus - suppression);
 
 	if(N > 0)
 	{
@@ -217,20 +217,31 @@ bool WordAgent::_regulate()
 		for(int i = 0; i < N; i++)
 		{
 			/*new agent by cloning: status is ACTIVE*/
+			WordAgent * wa = new WordAgent(ID,env,position);
 			;
 			/*add agent to environment*/
+			env->addPWordAgent(wa);
 		}
 	}
 	else if(N < 0)
 	{
-		/*removing (suppression)*/
+		std::vector<WordAgent * > nearAgents;
 		int M = -N;
-		for(int j = 0 ; j < M; j++)
+		if(env->getNearbyAgents(this,nearAgents))
 		{
-			/*removing agent*/
-			;
+			for(size_t i = 0; i < nearAgents.size(); i++)
+			{
+				if(nearAgents[i]->getID() == ID)
+				{
+					env->delPWordAgent(this);
+					M--;
+					if(M == 0)
+					{
+						break;
+					}
+				}
+			}
 		}
-
 	}
 
 	return true;
@@ -293,7 +304,11 @@ void WordAgent::_communicate()
 	/*updating information of local environment*/
 	if(env->update(this))
 	{
-	    setStatus(MATURE);
+		setStatus(MATURE);
+	}
+	else
+	{
+		setStatus(DIE);
 	}
 }
 
@@ -316,6 +331,7 @@ bool WordAgent::_die()
 
 bool WordAgent::_getStimulus()
 {
+	stimulus = 0.0;
 	/*get neighbour*/
 	std::vector<WordAgent * > nearAgents;
 	if(env->getNearbyAgents(this,nearAgents))
@@ -328,7 +344,7 @@ bool WordAgent::_getStimulus()
 			affinity = _calAffinity(rec);
 			if(affinity > STIMULUS)
 			{
-				stimulus++;
+				stimulus += affinity;
 			}
 		}
 	}
@@ -338,6 +354,7 @@ bool WordAgent::_getStimulus()
 
 bool WordAgent::_getSuppression()
 {
+	suppression = 0.0;
 	/*get neighbour*/
 	std::vector<WordAgent *> nearAgents;
 	if(env->getNearbyAgents(this,nearAgents))
@@ -350,7 +367,7 @@ bool WordAgent::_getSuppression()
 			affinity = _calAffinity(rec);
 			if(affinity > SUPPRESS)
 			{
-				suppression++;
+				suppression += affinity;
 			}
 		}
 	}
@@ -410,4 +427,5 @@ bool WordAgent::_cmpFeedback(std::pair<int, double> sp, std::pair<int, double> d
 	}
 
 	return true;
+
 }
