@@ -15,8 +15,11 @@
 #define MATURE		5	/*mature*/
 #define DIE		6	/*die*/
 
-#define AFFINITY	0.8	/*affinity threshold for adaptive recognition*/
+#define AFFINITY	0.0	/*affinity threshold for adaptive recognition*/
 #define STIMULUS	0.0	/*stimulus threshold*/
 #define SUPPRESS	0.0	/*suppress threshold*/
+
+#define ANTIGEN		0	/*Antigen word-agent*/
+#define BCELL		1	/*B cell word-agent*/
 
 #endif

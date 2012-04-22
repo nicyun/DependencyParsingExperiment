@@ -18,6 +18,9 @@ WordAgent::WordAgent(int id, Environment * environment,
 	position = pos;
 	status = ACTIVE;
 	//orders.push(1);
+
+	stimulus = 0.0;
+	suppression = 0.0;
 }
 
 int WordAgent::getID()
@@ -161,17 +164,47 @@ void WordAgent::setStatus(int s)
 	status = s;
 }
 
-bool WordAgent::interact(std::vector<int> receptor)
+bool WordAgent::_interact()
 {
-	/*interaction between antigen and B cell*/
-	this->agFeature = receptor;
-	if(_calAffinity(receptor) > AFFINITY)
+	/*interaction between word-agents:
+	(1) Antigens and B cells;
+	(2) B cells
+	*/
+
+	/*gain near agents*/
+	std::vector<WordAgent *> nearAgents;
+	if(env->getNearbyAgents(this, nearAgents))
 	{
-		setStatus(MATCH);
+		/*selecting objected interacted randomly*/
+		int n = rand()%((int(nearAgents.size())));
+		
+		if(nearAgents[n]->getCategory() == ANTIGEN)
+		{
+			/*interacting between Antigens and B cells*/
+			if((status == ACTIVE) && (nearAgents[n]->getStatus() == ACTIVE))
+			{
+				this->agFeature = nearAgents[n]->getRecReceptor();
+				if(_calAffinity(this->agFeature) > AFFINITY)	
+				{
+					nearAgents[n]->setStatus(DIE);
+					setStatus(MATCH);
+				}
+			}
+		}
+		else
+		{
+			/*interacting between B cells*/
+			if((status != DIE) && (nearAgents[n]->getStatus() != DIE))
+			{
+				double affinity = _calAffinity(nearAgents[n]->getRecReceptor());
+				if(affinity > STIMULUS)
+				{
+					stimulus += affinity;
+					nearAgents[n]->gainSuppression(affinity);
+				}
+			}
+		}	
 	}
-
-	/*interaction between B cells*/
-
 	return true;
 }
 
@@ -185,7 +218,7 @@ bool WordAgent::_clone()
 		setStatus(MATURE);
 		double alpha = 1.0 + agAffinity;
 
-		int N = (int)(alpha*concentration + stimulus - suppression);
+		int N = (int)(alpha + stimulus - suppression) * concentration;
 		if(N > 0)
 		{
 			/*cloning*/
@@ -209,7 +242,7 @@ bool WordAgent::_regulate()
 	/*regulating by idiotype immune network as equa:
 	N = concentration + stimulus - suppression
 	*/
-	int N = concentration + (int)(stimulus - suppression);
+	int N = concentration * (int)(1.0 + stimulus - suppression);
 
 	if(N > 0)
 	{
@@ -428,4 +461,14 @@ bool WordAgent::_cmpFeedback(std::pair<int, double> sp, std::pair<int, double> d
 
 	return true;
 
+}
+
+int WordAgent::getCategory()
+{
+	return this->category;
+}
+
+void WordAgent::gainSuppression(double suppress)
+{
+	this->suppression += suppress;
 }

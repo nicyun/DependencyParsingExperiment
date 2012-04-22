@@ -24,6 +24,7 @@ private:
 	double recAffinity;
 	double agAffinity;
 	int status;
+	int category;
 	double stimulus;
 	double suppression;
 	int concentration;
@@ -35,8 +36,12 @@ public:
 	bool run();
 	int getID();
 
+	int getCategory();
+
 	int getStatus();
 	void setStatus(int s);
+
+	void gainSuppression(double suppress);
 
 	double getAgAffinity();
 	std::pair<int, int> getPosition() const;
@@ -44,10 +49,10 @@ public:
 	std::vector<int> getRecReceptor() const;
 	std::pair<int, double> getFeedback() const;
 
-	bool interact(std::vector<int> receptor);
 	bool select();
 private:
 	bool _doMove();
+	bool _interact();
 	bool _mutate();
 	bool _clone();
 	bool _regulate();
