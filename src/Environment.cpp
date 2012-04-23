@@ -79,7 +79,7 @@ bool Environment::yInRange(int y)
 
 bool Environment::update(WordAgent * pWordAgent)
 {
-	if(!infor->getFeedback(pWordAgent))
+	if(infor->getFeedback(pWordAgent).first < 0)
     	{
 		pWordAgent->setStatus(DIE);
 		return false;
@@ -91,4 +91,9 @@ bool Environment::update(WordAgent * pWordAgent)
 std::map<int, double> Environment::getInfor(WordAgent * pWordAgent)
 {
 	return infor->getInfor(pWordAgent);
+}
+
+std::pair<int, double> Environment::gainFeedback(WordAgent * pWordAgent)
+{
+	return infor->getFeedback(pWordAgent);
 }

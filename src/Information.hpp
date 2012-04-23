@@ -18,7 +18,7 @@ public:
 	Information();
     	~Information();
 
-    	bool getFeedback(WordAgent * pWordAgent);
+    	std::pair<int, double> getFeedback(WordAgent * pWordAgent);
 	std::map<int, double> getInfor(WordAgent * pWordAgent);
 private:
 

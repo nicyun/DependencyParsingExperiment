@@ -6,9 +6,10 @@ Information::Information()
 Information::~Information()
 {}
 
-bool Information::getFeedback(WordAgent * pWordAgent)
+std::pair<int, double> Information::getFeedback(WordAgent * pWordAgent)
 {
-	return true;
+	std::pair<int, double> p;
+	return p;
 }
 
 std::map<int, double> Information::getInfor(WordAgent * pWordAgent)

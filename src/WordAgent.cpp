@@ -171,40 +171,39 @@ bool WordAgent::_interact()
 	(2) B cells
 	*/
 
+	if(getStatus() != ACTIVE)
+	{
+		return false;
+	}
+
 	/*gain near agents*/
 	std::vector<WordAgent *> nearAgents;
 	if(env->getNearbyAgents(this, nearAgents))
 	{
 		/*selecting objected interacted randomly*/
-		int n = rand()%((int(nearAgents.size())));
-		
-		if(nearAgents[n]->getCategory() == ANTIGEN)
+		for(size_t i = 0; i < nearAgents.size(); i++ )
 		{
-			/*interacting between Antigens and B cells*/
-			if((status == ACTIVE) && (nearAgents[n]->getStatus() == ACTIVE))
+			if(nearAgents[i]->getCategory() == ANTIGEN)
 			{
-				this->agFeature = nearAgents[n]->getRecReceptor();
-				if(_calAffinity(this->agFeature) > AFFINITY)	
+				/*interacting between Antigens and B cells*/
+				if(nearAgents[i]->getStatus() == ACTIVE)
 				{
-					nearAgents[n]->setStatus(DIE);
-					setStatus(MATCH);
+					this->agFeature = nearAgents[i]->getRecReceptor();
+					if(_calAffinity(this->agFeature) > AFFINITY)	
+					{
+						nearAgents[i]->setStatus(DIE);
+						setStatus(MATCH);
+					}
 				}
+			}
+
+			if(getStatus() != ACTIVE)
+			{
+				break;
 			}
 		}
-		else
-		{
-			/*interacting between B cells*/
-			if((status != DIE) && (nearAgents[n]->getStatus() != DIE))
-			{
-				double affinity = _calAffinity(nearAgents[n]->getRecReceptor());
-				if(affinity > STIMULUS)
-				{
-					stimulus += affinity;
-					nearAgents[n]->gainSuppression(affinity);
-				}
-			}
-		}	
 	}
+
 	return true;
 }
 
@@ -216,6 +215,10 @@ bool WordAgent::_clone()
 	if(getStatus() == CLONE)
 	{
 		setStatus(MATURE);
+		if(!_getRegulation())
+		{
+			std::cerr<<"Gain regulation failed!"<<std::endl;
+		}
 		double alpha = 1.0 + agAffinity;
 
 		int N = (int)(alpha + stimulus - suppression) * concentration;
@@ -242,6 +245,10 @@ bool WordAgent::_regulate()
 	/*regulating by idiotype immune network as equa:
 	N = concentration + stimulus - suppression
 	*/
+	if(_getRegulation())
+	{
+		std::cerr<<"Gain regulation failed!"<<std::endl;
+	}
 	int N = concentration * (int)(1.0 + stimulus - suppression);
 
 	if(N > 0)
@@ -322,13 +329,18 @@ bool WordAgent::select()
 
 bool WordAgent::_calFeedback()
 {
+	/*calculating feedback based on mutated receptors*/
+	if(getStatus() != MUTATE)
+	{
+		return false;
+	}
+
+	feedback = env->gainFeedback(this);
+
 	return true;
 }
 std::pair<int, double> WordAgent::getFeedback() const
 {
-	/*gain feedback of dependency parsing by local environment*/
-
-
 	return this->feedback;
 }
 
@@ -471,4 +483,24 @@ int WordAgent::getCategory()
 void WordAgent::gainSuppression(double suppress)
 {
 	this->suppression += suppress;
+}
+
+bool WordAgent::_getRegulation()
+{
+	/*get near agents*/
+	std::vector<WordAgent *> nearAgents;
+	if(env->getNearbyAgents(this, nearAgents))
+	{
+		double affinity = 0.0;
+		for(size_t i = 0; i < nearAgents.size(); i++)
+		{
+			if(nearAgents[i]->getStatus() != DIE)
+			{
+				affinity = _calAffinity(nearAgents[i]->getRecReceptor());
+				stimulus += affinity;
+				nearAgents[i]->gainSuppression(affinity);
+			}
+		}
+	}
+	return true;
 }

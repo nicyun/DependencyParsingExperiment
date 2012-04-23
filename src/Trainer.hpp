@@ -11,6 +11,8 @@ private:
 public:
 	Trainer(Model * pm);
 	bool rfTrain(const Sentence & sen, const std::vector<int> & fa);
+private:
+	bool _initailizeWordAgentNetwork();
 };
 
 #endif

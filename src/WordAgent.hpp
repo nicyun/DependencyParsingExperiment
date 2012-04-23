@@ -61,6 +61,7 @@ private:
 	/*sence*/
 	bool _getStimulus();
 	bool _getSuppression();
+	bool _getRegulation();
 
 	void _communicate();
 	bool _updateSelf();

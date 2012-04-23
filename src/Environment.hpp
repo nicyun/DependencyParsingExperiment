@@ -27,6 +27,7 @@ public:
 	bool yInRange(int y);
 	bool update(WordAgent * pWordAgent);
 	std::map<int, double> getInfor(WordAgent * pWordAgent);
+	std::pair<int, double> gainFeedback(WordAgent * pWordAgent);
 private:
 	int _calcSub(const std::pair<int, int> & pos) const;
 };
