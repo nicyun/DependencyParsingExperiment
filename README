@@ -1,0 +1,4 @@
+run command:
+./py_exp/start.sh
+make
+./bin/test ./result/model ./data/english_test.conll ./result/out

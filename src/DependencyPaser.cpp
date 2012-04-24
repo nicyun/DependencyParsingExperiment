@@ -67,8 +67,10 @@ bool DependencyPaser::trainFile(const char * file)
 				item.push_back(tmp);
 			}
 			senes.push_back(item);
+
 		}
 	}
+
 	return true;
 }
 
@@ -116,4 +118,5 @@ double DependencyPaser::predict(const Sentence & sen, vector<int> & fa)
 {
 	return pPredictor->predict(sen, fa);
 }
+
 

@@ -6,11 +6,13 @@
 #include <set>
 
 class WordAgent;
+class Information;
 
 class Environment{
 private:
 	std::vector<std::set<WordAgent *> > pWordAgents;
 	int rows, cols;
+	Information * infor;
 public:
 	Environment(int r, int c);
 	bool addPWordAgent(WordAgent * pWordAgent);
@@ -23,6 +25,9 @@ public:
 	std::pair<int, int> getRandomPosition();
 	bool xInRange(int x);
 	bool yInRange(int y);
+	bool update(WordAgent * pWordAgent);
+	std::map<int, double> getInfor(WordAgent * pWordAgent);
+	std::pair<int, double> gainFeedback(WordAgent * pWordAgent);
 private:
 	int _calcSub(const std::pair<int, int> & pos) const;
 };
