@@ -1,6 +1,7 @@
 #ifndef __DEPENDENCY_PASER__
 #define __DEPENDENCY_PASER__
 
+#include <string>
 #include <map>
 
 #include "Trainer.hpp"

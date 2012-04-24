@@ -4,6 +4,8 @@
 #include <ctime>
 
 #include "WordAgent.hpp"
+#include "Information.hpp"
+#include "Parameter.hpp"
 
 using namespace std;
 
@@ -73,4 +75,25 @@ bool Environment::xInRange(int x)
 bool Environment::yInRange(int y)
 {
 	return y >= 0 && y < cols;
+}
+
+bool Environment::update(WordAgent * pWordAgent)
+{
+	if(infor->getFeedback(pWordAgent).first < 0)
+    	{
+		pWordAgent->setStatus(DIE);
+		return false;
+	}
+
+	return true;
+}
+
+std::map<int, double> Environment::getInfor(WordAgent * pWordAgent)
+{
+	return infor->getInfor(pWordAgent);
+}
+
+std::pair<int, double> Environment::gainFeedback(WordAgent * pWordAgent)
+{
+	return infor->getFeedback(pWordAgent);
 }
