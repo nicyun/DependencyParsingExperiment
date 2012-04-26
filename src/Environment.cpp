@@ -21,8 +21,8 @@ int Environment::_calcSub(const pair<int, int> & pos) const
 }
 
 bool Environment::addPWordAgent(WordAgent * pWordAgent)
-{
-	pWordAgents[_calcSub(pWordAgent->getPosition())].insert(pWordAgent);
+{	
+	pWordAgents[_calcSub(pWordAgent->getPosition())].insert(pWordAgent);	
 	return true;
 }
 

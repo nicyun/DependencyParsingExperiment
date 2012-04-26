@@ -43,6 +43,7 @@ bool DependencyPaser::rfTrain(const Sentence & sen,
 
 bool DependencyPaser::trainFile(const char * file)
 {
+	/*online reinforcement learning*/
 	ifstream fin(file);
 	string line;
 	vector<vector<string> > senes;
@@ -56,6 +57,7 @@ bool DependencyPaser::trainFile(const char * file)
 				sen.push_back(make_pair(senes[i][1], senes[i][3]));
 				father.push_back(atoi(senes[i][6].c_str()));
 			}
+			/*immune based multi-agent reinforcement learning*/
 			rfTrain(sen, father);
 			senes.clear();
 		}
