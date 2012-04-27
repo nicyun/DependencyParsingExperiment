@@ -65,8 +65,7 @@ private:
 	bool _die();
 
 	/*sence*/
-	bool _getStimulus();
-	bool _getSuppression();
+	
 	bool _getRegulation();
 
 	int _calConcentration();
@@ -82,7 +81,8 @@ private:
 	double _calStimulusByBcell(std::vector<int> receptor);
 
 	bool _cmpFeedback(std::pair<int, double> sp, std::pair<int, double> dp);
-
+	
+	void _mapStatusToBehavior();
 };
 
 #endif

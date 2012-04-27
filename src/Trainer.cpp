@@ -14,20 +14,16 @@ bool Trainer::rfTrain(const Sentence & sen, const vector<int> & fa)
 {
 	/*update weights of receptor(features) by learning from a sample*/
 	/*construct antigens:initailizing receptors and the number of agents*/
-	if(_constructAntigen())
+	if(_constructAntigen(sen))
 	{
 		/*injecting antigens randomly by environment:
 		selecting positions randomly
 		*/
 		for(size_t i = 0; i < antigens.size();)
 		{
-			int n = antigens[i].second;
-			for(int j = 0; j < n; j++ )
+			for(int j = 0; j < antigens[i].second; j++ )
 			{
-				pair<int,int> pos;
-				int id = 0;
-				WordAgent * wa = new WordAgent(id, env, pos, ANTIGEN, 1);
-				env->addPWordAgent(wa);
+				env->addPWordAgent(antigens[i].first);
 			}
 			/*immune regulating:
 			when all antigens are died, and clone is happened, current regulation is finished!
@@ -42,7 +38,7 @@ bool Trainer::rfTrain(const Sentence & sen, const vector<int> & fa)
 	return true;
 }
 
-bool Trainer::_constructAntigen()
+bool Trainer::_constructAntigen(const Sentence & sen)
 {
 
 	return true;

@@ -16,7 +16,7 @@ public:
 	Trainer(Model * pm);
 	bool rfTrain(const Sentence & sen, const std::vector<int> & fa);
 private:
-	bool _constructAntigen();
+	bool _constructAntigen(const Sentence & sen);
 	
 };
 
