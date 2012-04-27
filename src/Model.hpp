@@ -11,10 +11,12 @@ class Model{
 private:
 	std::map<std::string, int> fMap;
 	std::vector<double> fWeight;
-	FeatureTemplate feature;
+	FeatureTemplate ft;
 public:
-	double wordPairWeight(const Sentence & sen, int pa, int pb);
+	double wordPairWeight(const Sentence & sen, int p, int c);
 	double sumFeatureWeight(const std::vector<std::string> & featVec);
+	bool getFeatureIDVec(const Sentence & sen, int p, int c,
+			std::vector<int> & featIDVec);
 	int addFeature(const std::string & feat);
 private:
 	int _getFeatureID(const std::string & feat);

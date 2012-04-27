@@ -22,4 +22,8 @@
 #define ANTIGEN		0	/*Antigen word-agent*/
 #define BCELL		1	/*B cell word-agent*/
 
+// Enviroment scale
+#define ROWS 10
+#define COLS 10
+
 #endif

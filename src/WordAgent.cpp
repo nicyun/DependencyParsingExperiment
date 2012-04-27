@@ -17,10 +17,25 @@ WordAgent::WordAgent(int id, Environment * environment,
 	env = environment;
 	position = pos;
 	status = ACTIVE;
-	//orders.push(1);
 
 	stimulus = 0.0;
 	suppression = 0.0;
+}
+
+bool WordAgent::addDomFeature(const vector<int> & feature)
+{
+	for(size_t i = 0; i < feature.size(); i++){
+		domFeature[feature[i]] = 0.0;
+	}
+	return true;
+}
+
+bool WordAgent::addTmpFeature(const vector<int> & feature)
+{
+	for(size_t i = 0; i < feature.size(); i++){
+		tmpFeature[feature[i]] = 0.0;
+	}
+	return true;
 }
 
 int WordAgent::getID()
@@ -466,7 +481,7 @@ bool WordAgent::_updateSelf()
 
 bool WordAgent::_cmpFeedback(std::pair<int, double> sp, std::pair<int, double> dp)
 {
-	if(sp.first < dp. second)
+	if(sp.first < dp.second)
 	{
 		return false;
 	}

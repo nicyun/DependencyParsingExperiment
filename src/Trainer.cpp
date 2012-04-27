@@ -2,17 +2,18 @@
 #include "Parameter.hpp"
 
 #include <iostream>
-#include <stdlib.h>
+#include <vector>
 
 using namespace std;
 
 Trainer::Trainer(Model * pm) : pModel(pm)
 {
-	if(_initailizeWordAgentNetwork())
-	{
-		std::cerr<<"Initializing word-agent network failed!"<<std::endl;
-		exit(1);
-	}
+	pEnv = new Environment(ROWS, COLS);
+}
+
+Trainer::~Trainer()
+{
+	delete pEnv;
 }
 
 bool Trainer::rfTrain(const Sentence & sen, const vector<int> & fa)
@@ -25,7 +26,26 @@ bool Trainer::rfTrain(const Sentence & sen, const vector<int> & fa)
 	return true;
 }
 
-bool Trainer::_initailizeWordAgentNetwork()
+bool Trainer::addBCells(const Sentence & sen, const vector<int> & fa)
 {
+	vector<int> features;
+	for(size_t i = 1; i < sen.size(); i++){
+		int j = fa[i];
+		int bi = _buildBCell(sen[i].first);
+		int bj = _buildBCell(sen[j].first);
+		pModel->getFeatureIDVec(sen, j, i, features);
+		BCells[bi].addTmpFeature(features);
+		BCells[bj].addDomFeature(features);
+	}
 	return true;
+}
+
+int Trainer::_buildBCell(const string & word)
+{
+	if(wordID.find(word) == wordID.end()){
+		wordID[word] = BCells.size();
+		BCells.push_back(WordAgent(wordID[word], pEnv, 
+				pEnv->getRandomPosition()));
+	}
+	return wordID[word];
 }

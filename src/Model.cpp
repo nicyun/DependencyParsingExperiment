@@ -2,11 +2,23 @@
 
 using namespace std;
 
-double Model::wordPairWeight(const Sentence & sen, int pa, int pb)
+double Model::wordPairWeight(const Sentence & sen, int p, int c)
 {
 	vector<string> featVec;
-	feature.abstractFeature(sen, pa, pb, featVec);
+	ft.abstractFeature(sen, p, c, featVec);
 	return sumFeatureWeight(featVec);
+}
+
+bool Model::getFeatureIDVec(const Sentence & sen, int p, int c,
+		vector<int> & featIDVec)
+{
+	vector<string> featVec;
+	ft.abstractFeature(sen, p, c, featVec);
+	featIDVec.clear();
+	for(size_t i = 0; i < featVec.size(); i++){
+		featIDVec.push_back(addFeature(featVec[i]));
+	}
+	return true;
 }
 
 double Model::sumFeatureWeight(const vector<string> & featVec)

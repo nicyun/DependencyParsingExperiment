@@ -1,17 +1,16 @@
 #ifndef _EVALUATION_H
 #define _EVALUATION_H
 
-#include "Sentence.hpp"
+#include <vector>
 
 class Evaluation{
 private:
-	double accuracy;
-
 public:
 	Evaluation();
 	~Evaluation();
 
-	double calAccuracy(Sentence & s);
+	double calAccuracy(const std::vector<int> & newLabel,
+			const std::vector<int> & orgLabel);
 };
 
 #endif

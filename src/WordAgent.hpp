@@ -19,7 +19,6 @@ private:
 	std::vector<int> agFeature;
 	std::vector<int> mutatePosition;
 	Environment * env;
-	std::queue<int> orders;
 	double domAffinity;
 	double recAffinity;
 	double agAffinity;
@@ -35,6 +34,8 @@ public:
 			const std::pair<int, int> & pos);
 	bool run();
 	int getID();
+	bool addDomFeature(const std::vector<int> & feature);
+	bool addTmpFeature(const std::vector<int> & feature);
 
 	int getCategory();
 

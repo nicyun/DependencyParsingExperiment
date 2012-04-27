@@ -20,10 +20,11 @@ public:
 	bool loadModel(const char * file);
 	bool saveModel(const char * file);
 	bool trainFile(const char * file);
-	bool rfTrain(const Sentence & sen, const std::vector<int> & fa);
 	double predict(const Sentence & sen, std::vector<int> & fa);
 	bool predictFile(const char * testFile, const char * outFile);
 private:
+	bool _readFileAddBCell(const char * file);
+	bool _readFileTrain(const char * file);
 };
 
 #endif

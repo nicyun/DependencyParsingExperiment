@@ -35,13 +35,7 @@ bool DependencyPaser::saveModel(const char * file)
 	return true;
 }
 
-bool DependencyPaser::rfTrain(const Sentence & sen, 
-		const vector<int> & fa)
-{
-	return pTrainer->rfTrain(sen, fa);
-}
-
-bool DependencyPaser::trainFile(const char * file)
+bool DependencyPaser::_readFileAddBCell(const char * file)
 {
 	ifstream fin(file);
 	string line;
@@ -56,7 +50,7 @@ bool DependencyPaser::trainFile(const char * file)
 				sen.push_back(make_pair(senes[i][1], senes[i][3]));
 				father.push_back(atoi(senes[i][6].c_str()));
 			}
-			rfTrain(sen, father);
+			pTrainer->addBCells(sen, father);
 			senes.clear();
 		}
 		else{
@@ -71,6 +65,45 @@ bool DependencyPaser::trainFile(const char * file)
 		}
 	}
 
+	return true;
+}
+
+bool DependencyPaser::_readFileTrain(const char * file)
+{
+	ifstream fin(file);
+	string line;
+	vector<vector<string> > senes;
+	while(getline(fin, line)){
+		if(line == ""){
+			vector<int> father;
+			Sentence sen;
+			sen.push_back(make_pair("ROOT", "ORG"));
+			father.push_back(-1);
+			for(size_t i = 0; i < senes.size(); i++){
+				sen.push_back(make_pair(senes[i][1], senes[i][3]));
+				father.push_back(atoi(senes[i][6].c_str()));
+			}
+			pTrainer->rfTrain(sen, father);
+			senes.clear();
+		}
+		else{
+			vector<string> item;
+			string tmp;
+			istringstream sin(line);
+			while(sin >> tmp){
+				item.push_back(tmp);
+			}
+			senes.push_back(item);
+
+		}
+	}
+
+	return true;
+}
+bool DependencyPaser::trainFile(const char * file)
+{
+	_readFileAddBCell(file);
+	_readFileTrain(file);
 	return true;
 }
 
