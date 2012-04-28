@@ -40,6 +40,16 @@ bool Trainer::addBCells(const Sentence & sen, const vector<int> & fa)
 	return true;
 }
 
+bool Trainer::cloneBCells()
+{
+	for(size_t i = 0; i < wordFreq.size(); i++){
+		for(int j = 1; j < wordFreq[i]; j++){
+			BCells.push_back(BCells[i]);
+		}
+	}
+	return true;
+}
+
 int Trainer::_buildBCell(const string & word)
 {
 	if(wordID.find(word) == wordID.end()){
@@ -47,5 +57,10 @@ int Trainer::_buildBCell(const string & word)
 		BCells.push_back(WordAgent(wordID[word], pEnv, 
 				pEnv->getRandomPosition()));
 	}
-	return wordID[word];
+	int res = wordID[word];
+	if((int)wordFreq.size() <= res){
+		wordFreq.push_back(0);
+	}
+	wordFreq[res] ++;
+	return res;
 }

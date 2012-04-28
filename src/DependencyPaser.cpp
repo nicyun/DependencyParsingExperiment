@@ -64,6 +64,7 @@ bool DependencyPaser::_readFileAddBCell(const char * file)
 
 		}
 	}
+	pTrainer->cloneBCells();
 
 	return true;
 }
