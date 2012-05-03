@@ -1,6 +1,7 @@
 #include "Model.hpp"
-
+#include <iostream>
 using namespace std;
+
 
 double Model::wordPairWeight(const Sentence & sen, int p, int c)
 {
@@ -40,9 +41,50 @@ int Model::_getFeatureID(const string & feat)
 
 int Model::addFeature(const string & feat)
 {
-	if(fMap.find(feat) != fMap.end()){
+	if(fMap.find(feat) == fMap.end()){
 		int id = fMap.size();
 		fMap[feat] = id;
 	}
+
 	return fMap[feat];
+}
+
+bool Model::getFeatures(const Sentence & sen,vector<vector<string> > &sens, vector<int> & fa)
+{
+	for(size_t j = 1; j < sens.size(); j++)
+	{
+		vector<string> fea;
+		ft.abstractFeature(sen, fa[j], j, fea);
+	}
+
+	return true;
+}
+
+void Model::initFeatureWeight()
+{
+	fWeight.resize((int)fMap.size());
+}
+
+vector<double> Model::getFeatureWeight()
+{
+	return fWeight;
+}
+
+bool Model::setFeatureWeight(std::vector<double> & newWeight)
+{
+        fWeight = newWeight;
+        return true;
+}
+
+bool Model::updateFeatureWeight(map<int, double> & domFeatures)
+{
+	map<int, double>::iterator it;
+	for(it = domFeatures.begin(); it != domFeatures.end(); it++)
+	{
+		if(it->first < (int)fWeight.size())
+		{
+			fWeight[it->first] = it->second;
+		}
+	}
+	return true;
 }

@@ -14,6 +14,7 @@ private:
 	Model * pModel;
 	Trainer * pTrainer;
 	Predictor * pPredictor;
+	Evaluation * pEvaluation;
 public:
 	DependencyPaser();
 	~DependencyPaser();

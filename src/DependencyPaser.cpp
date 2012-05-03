@@ -8,14 +8,16 @@
 #include <cstdlib>
 
 #include "DependencyPaser.hpp"
+#include "Parameter.hpp"
 
 using namespace std;
 
 DependencyPaser::DependencyPaser()
 {
-	pModel = new Model;
-	pTrainer = new Trainer((Model *)pModel);
+	pModel = new Model();
 	pPredictor = new Predictor((Model *)pModel);
+	pEvaluation = new Evaluation((Predictor *) pPredictor,(Model *) pModel);
+	pTrainer = new Trainer((Model *) pModel, (Evaluation *) pEvaluation);
 }
 
 DependencyPaser::~DependencyPaser()
@@ -50,7 +52,10 @@ bool DependencyPaser::_readFileAddBCell(const char * file)
 				sen.push_back(make_pair(senes[i][1], senes[i][3]));
 				father.push_back(atoi(senes[i][6].c_str()));
 			}
+			//cout<<"word pairs in a sentence is "<<sen.size()<<endl;
+			pModel->getFeatures(sen,senes,father);
 			pTrainer->addBCells(sen, father);
+			cout<<".";
 			senes.clear();
 		}
 		else{
@@ -59,52 +64,67 @@ bool DependencyPaser::_readFileAddBCell(const char * file)
 			istringstream sin(line);
 			while(sin >> tmp){
 				item.push_back(tmp);
+				//cout<<tmp<<" ";
 			}
+			//cout<<endl;
 			senes.push_back(item);
-
 		}
 	}
-	pTrainer->cloneBCells();
+	cout<<"Relicating B cells according to word frequences...";
+        pTrainer->cloneBCells();
+        cout<<"Replicate finished!"<<endl;
 
 	return true;
 }
 
 bool DependencyPaser::_readFileTrain(const char * file)
 {
+	pTrainer->constructBcellNet();
 	ifstream fin(file);
 	string line;
 	vector<vector<string> > senes;
-	while(getline(fin, line)){
-		if(line == ""){
-			vector<int> father;
-			Sentence sen;
-			sen.push_back(make_pair("ROOT", "ORG"));
-			father.push_back(-1);
-			for(size_t i = 0; i < senes.size(); i++){
-				sen.push_back(make_pair(senes[i][1], senes[i][3]));
-				father.push_back(atoi(senes[i][6].c_str()));
-			}
-			pTrainer->rfTrain(sen, father);
-			senes.clear();
-		}
-		else{
-			vector<string> item;
-			string tmp;
-			istringstream sin(line);
-			while(sin >> tmp){
-				item.push_back(tmp);
-			}
-			senes.push_back(item);
+	pModel->initFeatureWeight();
+	for(size_t i = 0; i < LEARNTIMES; i++)
+	{
+                while(getline(fin, line)){
+                        if(line == ""){
+                                vector<int> father;
+                                Sentence sen;
+                                sen.push_back(make_pair("ROOT", "ORG"));
+                                father.push_back(-1);
+                                for(size_t i = 0; i < senes.size(); i++){
+                                        sen.push_back(make_pair(senes[i][1], senes[i][3]));
+                                        father.push_back(atoi(senes[i][6].c_str()));
+                                }
 
-		}
+                                pTrainer->rfTrain(sen, father);
+                                senes.clear();
+                                break;
+                        }
+                        else{
+                                vector<string> item;
+                                string tmp;
+                                istringstream sin(line);
+                                while(sin >> tmp){
+                                        item.push_back(tmp);
+                                }
+                                senes.push_back(item);
+
+                        }
+                }
 	}
 
 	return true;
 }
 bool DependencyPaser::trainFile(const char * file)
 {
+        cout<<"Initilizing B cell Network...";
 	_readFileAddBCell(file);
+	cout<<"Initilize finished!"<<endl;
+	cout<<"Training...";
 	_readFileTrain(file);
+	cout<<"Train finished!"<<endl;
+
 	return true;
 }
 

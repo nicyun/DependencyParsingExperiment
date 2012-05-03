@@ -4,13 +4,17 @@
 #include <vector>
 
 #include "WordAgent.hpp"
+#include "Sentence.hpp"
 
 class Simulator{
 private:
-	std::vector<WordAgent *> pWordAgents;
+	Environment * env;
 public:
+	Simulator(Environment * environment);
 	bool addPWordAgent(WordAgent * pWordAgent);
-	bool run();
+	bool run(const Sentence & sen, const std::vector<int> & fa);
+private:
+        bool resetInteratObjects();
 };
 
 #endif

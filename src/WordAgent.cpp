@@ -1,3 +1,4 @@
+
 #include <vector>
 #include <iostream>
 
@@ -5,6 +6,7 @@
 #include <ctime>
 #include <cstdlib>
 #include <math.h>
+#include <iomanip>
 
 #include "Parameter.hpp"
 #include "WordAgent.hpp"
@@ -12,28 +14,37 @@
 using namespace std;
 
 WordAgent::WordAgent(int id, Environment * environment,
-		const pair<int, int> & pos){
+		const pair<int, int> & pos, int cat, int con){
 	ID = id;
 	env = environment;
 	position = pos;
+
+	category = cat;
+	concentration = con;
 	status = ACTIVE;
 
 	stimulus = 0.0;
 	suppression = 0.0;
+
+	agAffinity = 0.0;
+	isInteractedWithAntigen = false;
+
+	_mapStatusToBehavior();
 }
 
 bool WordAgent::addDomFeature(const vector<int> & feature)
 {
 	for(size_t i = 0; i < feature.size(); i++){
-		domFeature[feature[i]] = 0.0;
+
+		domFeature.insert(make_pair(feature[i],0.0));
 	}
 	return true;
 }
 
-bool WordAgent::addTmpFeature(const vector<int> & feature)
+bool WordAgent::addRecFeature(const vector<int> & feature)
 {
 	for(size_t i = 0; i < feature.size(); i++){
-		tmpFeature[feature[i]] = 0.0;
+		recFeature.push_back(feature[i]);
 	}
 	return true;
 }
@@ -45,12 +56,45 @@ int WordAgent::getID()
 
 bool WordAgent::run()
 {
-	bool hasRun = false;
+	bool hasRun = false;	//while(orders.size())
+        if(orders.size())
+        {
+                int now = orders.front();
+                orders.pop();
+                switch(now)
+                {
+                        case MOVING:
+                                _doMove();
+                                break;
+                        case INTERACTING:
+                                _interact();
+                                break;
+                        case MUTATING:
+                                _mutate();
+                                break;
+                        case SELECTING:
+                                _select();
+                                break;
+                        case CLONING:
+                                _clone();
+                                break;
+                        case REGULATING:
+                                _regulate();
+                                break;
+                        case DYING:
+                                _die();
+                                break;
+                        default:
+                                assert(0);
+                }
+        }
 	return hasRun;
 }
 
 bool WordAgent::_doMove()
 {
+       cout<<"mo ";
+	_updateSelf();
 	static const int dx[] = {0, 1, 1, 1, 0, -1, -1, -1};
 	static const int dy[] = {1, 1, 0, -1, -1, -1, 0, 1};
 	int min = env->agentCount(position) - 1;
@@ -72,12 +116,16 @@ bool WordAgent::_doMove()
 	if(min == env->agentCount(position) - 1){
 		return false;
 	}
+
 	srand(time(NULL));
 	int p = rand() % pos.size();
 	pair<int, int> oldPos = position;
 	env->delPWordAgent(this);
 	position = pos[p];
+
 	env->addPWordAgent(this);
+
+	orders.push(INTERACTING);
 	return true;
 }
 
@@ -88,57 +136,91 @@ pair<int, int> WordAgent::getPosition() const
 
 bool WordAgent::_mutate()
 {
+
 	if(getStatus() == MATCH)
 	{
+	        cout<<"mu ";
 		tmpFeature = domFeature;
 		bool flag = false;
 		/*multi-point mutation*/
 		int n = -1;
 		double d = 0.0;
-		for(size_t i = 0; i < mutatePosition.size(); i++)
+		double mutatedProb = 0.0;
+		srand(time(NULL));
+		for(size_t i = 0; i < agFeature.size(); i++)
 		{
-			n = rand()%2;
-			if(n == 0)
-			{
-				/*increase*/
-				d = domFeature[i] + DETA;
-				if(d < 1.0)
-				{
-					tmpFeature[i] = d;
-					flag = true;
-				}
-			}
-			else
-			{
-				/*decrease*/
-				d = domFeature[i] - DETA;
-				if(d > 0.0)
-				{
-					tmpFeature[i] = d;
-					flag = true;
-				}
-			}
-			d = 0.0;
+		    /*producting mutated probability*/
+		    int r = rand()%100;
+
+		    mutatedProb = (double)r/100.0;
+		    mutatedProb = 0.0;
+		    if(mutatedProb < MUTATEPRO)
+		    {
+
+               		 n = rand()%2;
+               		 if(n == 0)
+               		 {
+                   		 /*increase*/
+                   		 d = domFeature[agFeature[i]] + DETA;
+                   		 if(d < 1.0)
+                   		 {
+                       			 tmpFeature[agFeature[i]] = d;
+					 mutatePosition.push_back(agFeature[i]);
+                       			 flag = true;
+                   		 }
+               		 }
+               		 else
+               		 {
+                   		 /*decrease*/
+                   		 d = domFeature[agFeature[i]] - DETA;
+                   		 if(d > 0.0)
+                   		 {
+                       			 tmpFeature[agFeature[i]] = d;
+					 mutatePosition.push_back(agFeature[i]);
+                       			 flag = true;
+                   		 }
+               		 }
+               		 d = 0.0;
+		    }
 		}
 
-		/*calculating affinity after mutation*/
-		double mutatedAffinity = _calMutatedAffinity(agFeature);
+		/*calculating difference of affinity after mutation*/
+		mutatedAffinity = _calMutatedAffinity(agFeature);
+		int diff = int((mutatedAffinity - agAffinity) * PRECISION);
 
-		if(flag && _calFeedback() && (mutatedAffinity > agAffinity))
+		if(_calFeedback() && (diff > 0))
 		{
 			setStatus(MUTATE);
-			return true;
 		}
 	}
 
-	return false;
+	_mapStatusToBehavior();
+
+	return true;
 }
 
-double WordAgent::_calAffinity(std::vector<int> receptor)
+double WordAgent::_calAffinity(std::vector<int> receptor, int & matchSize)
 {
-	/*calculating affinity between antigen and B cell*/
+	/*calculating affinity*/
+	matchSize = 0;
 	double sum = 0.0;
-	if(status == ACTIVE)
+        std::map<int, double>::iterator it;
+        for(size_t i = 0; i < receptor.size(); i++)
+        {
+                it = domFeature.find(receptor[i]);
+                if(it != domFeature.end())
+                {
+                        matchSize++;
+                        sum += domFeature[receptor[i]];
+                }
+        }
+	return sum;
+}
+
+double WordAgent::_calStimulusByBcell(std::vector<int> receptor)
+{
+	double sum = 0.0;
+	if(status != DIE)
 	{
 		std::map<int, double>::iterator it;
 		for(size_t i = 0; i < receptor.size(); i++)
@@ -150,6 +232,7 @@ double WordAgent::_calAffinity(std::vector<int> receptor)
 			}
 		}
 	}
+
 	return sum;
 }
 
@@ -158,6 +241,7 @@ double WordAgent::_calMutatedAffinity(std::vector<int> receptor)
 	/*calculating affinity after mutation*/
 	double sum = 0.0;
 	std::map<int, double>::iterator it;
+
 	for(size_t i = 0; i < receptor.size(); i++)
 	{
 		it = tmpFeature.find(receptor[i]);
@@ -166,6 +250,8 @@ double WordAgent::_calMutatedAffinity(std::vector<int> receptor)
 			sum += tmpFeature[receptor[i]];
 		}
 	}
+
+
 	return sum;
 }
 
@@ -186,38 +272,59 @@ bool WordAgent::_interact()
 	(2) B cells
 	*/
 
-	if(getStatus() != ACTIVE)
+	if(status != ACTIVE)
 	{
 		return false;
 	}
-
+	_updateSelf();
+	cout<<"in ";
 	/*gain near agents*/
+	mutatePosition.clear();
 	std::vector<WordAgent *> nearAgents;
 	if(env->getNearbyAgents(this, nearAgents))
 	{
 		/*selecting objected interacted randomly*/
-		for(size_t i = 0; i < nearAgents.size(); i++ )
+		for(size_t i = 0; i < nearAgents.size(); i++)
 		{
-			if(nearAgents[i]->getCategory() == ANTIGEN)
+
+			if((nearAgents[i]->getCategory() == ANTIGEN) && (category == BCELL))
 			{
 				/*interacting between Antigens and B cells*/
 				if(nearAgents[i]->getStatus() == ACTIVE)
 				{
+
+				        isInteractedWithAntigen = true;
 					this->agFeature = nearAgents[i]->getRecReceptor();
-					if(_calAffinity(this->agFeature) > AFFINITY)	
+					int matchSize;
+					agAffinity = _calAffinity(this->agFeature,matchSize);
+					if(matchSize == (int)agFeature.size())
 					{
-						nearAgents[i]->setStatus(DIE);
-						setStatus(MATCH);
-					}
+					        setStatus(MATCH);
+					        nearAgents[i]->setStatus(DIE);
+						break;
+                                        }
 				}
 			}
-
-			if(getStatus() != ACTIVE)
+			else if((nearAgents[i]->getCategory() == BCELL) && (category == ANTIGEN))
 			{
-				break;
-			}
+			        if(nearAgents[i]->getStatus() == ACTIVE)
+				{
+				        isInteractedWithAntigen = true;
+					this->agFeature = nearAgents[i]->getRecReceptor();
+					int matchSize;
+					agAffinity = _calAffinity(this->agFeature,matchSize);
+					if(matchSize == (int)agFeature.size())
+					{
+					        setStatus(DIE);
+					        nearAgents[i]->setStatus(MATCH);
+						break;
+                                        }
+				}
+                        }
 		}
 	}
+
+	_mapStatusToBehavior();
 
 	return true;
 }
@@ -227,76 +334,100 @@ bool WordAgent::_clone()
 	/*cloning by idiotype immune network and adaptive immune as equa:
 	N = alpha*concentration + stimulus - suppression
 	*/
-	if(getStatus() == CLONE)
+
+	if(getStatus() == MATURE)
 	{
-		setStatus(MATURE);
+	        cout<<"cl ";
+		setStatus(CLONE);
 		if(!_getRegulation())
 		{
 			std::cerr<<"Gain regulation failed!"<<std::endl;
 		}
 		double alpha = 1.0 + agAffinity;
+		int con = _calConcentration();
+		int N = (int)(alpha + stimulus - suppression) * con;
 
-		int N = (int)(alpha + stimulus - suppression) * concentration;
 		if(N > 0)
 		{
+		        vector<WordAgent> v;
+
 			/*cloning*/
 			for(int i = 0; i < N; i++)
 			{
 				/*new agent by cloning: status is MEMORY*/
-				WordAgent * wa = new WordAgent(ID,env,position);
+				WordAgent wa(ID,env,position,BCELL,1);
+				wa.setDomReceptor(domFeature);
+				wa.setRecReceptor(recFeature);
+				v.push_back(wa);
 				/*add agent to environment*/
-				env->addPWordAgent(wa);
+				env->addPWordAgent(&v[i]);
 			}
+			orders.push(REGULATING);
 
 			return true;
 		}
 	}
+	//cout<<"clone ";
+	//_mapStatusToBehavior();
 
 	return false;
 }
 
 bool WordAgent::_regulate()
 {
-	/*regulating by idiotype immune network as equa:
+
+	/*regulating by idiotype immune network of B cells as equa:
 	N = concentration + stimulus - suppression
 	*/
-	if(_getRegulation())
-	{
-		std::cerr<<"Gain regulation failed!"<<std::endl;
-	}
-	int N = concentration * (int)(1.0 + stimulus - suppression);
+	//cout<<"regulating ";
 
-	if(N > 0)
+	if(category == BCELL)
 	{
-		/*cloning (stimulus)*/
-		for(int i = 0; i < N; i++)
-		{
-			/*new agent by cloning: status is ACTIVE*/
-			WordAgent * wa = new WordAgent(ID,env,position);
-			;
-			/*add agent to environment*/
-			env->addPWordAgent(wa);
-		}
-	}
-	else if(N < 0)
-	{
-		std::vector<WordAgent * > nearAgents;
-		int M = -N;
-		if(env->getNearbyAgents(this,nearAgents))
-		{
-			for(size_t i = 0; i < nearAgents.size(); i++)
-			{
-				if(nearAgents[i]->getID() == ID)
-				{
-					env->delPWordAgent(this);
-					M--;
-					if(M == 0)
-					{
-						break;
-					}
-				}
-			}
-		}
+                cout<<"re ";
+                _updateSelf();
+                if(!_getRegulation())
+                {
+                        std::cerr<<"Gain regulation failed!"<<std::endl;
+                }
+
+                int con = _calConcentration();
+                int N = con * (int)(1.0 + stimulus - suppression);
+
+                if(N > 0)
+                {
+                        /*cloning (stimulus)*/
+                        for(int i = 0; i < N; i++)
+                        {
+                                /*new agent by cloning: status is ACTIVE*/
+                                WordAgent wa(ID,env,position,BCELL,1);
+
+                                /*add agent to environment*/
+                                env->addPWordAgent(&wa);
+                        }
+                }
+                else if(N < 0)
+                {
+                        std::vector<WordAgent * > nearAgents;
+                        int M = -N;
+                        if(env->getNearbyAgents(this,nearAgents))
+                        {
+                                for(size_t i = 0; i < nearAgents.size(); i++)
+                                {
+                                        if(nearAgents[i]->getID() == ID)
+                                        {
+                                                env->delPWordAgent(this);
+                                                M--;
+                                                if(M == 0)
+                                                {
+                                                        break;
+                                                }
+                                        }
+                                }
+                        }
+                }
+
+                //cout<<"regulated finished! ";
+                _mapStatusToBehavior();
 	}
 
 	return true;
@@ -307,10 +438,12 @@ std::vector<int> WordAgent::getRecReceptor() const
 	return recFeature;
 }
 
-bool WordAgent::select()
+bool WordAgent::_select()
 {
-	if(getStatus() == MUTATE)
+
+	if(status == MUTATE)
 	{
+	        cout<<"se ";
 		/*selection by competition among mutated agents:
 		(1) agents generating negative feedbacks of depedency parsing are died;
 		(2) agents with lower affinities are died when competing;
@@ -324,7 +457,8 @@ bool WordAgent::select()
 				if(nearAgents[i]->getStatus() == MUTATE)
 				{
 					/*comparing feedbacks*/
-					if(_cmpFeedback(feedback,nearAgents[i]->getFeedback()))
+		/*			if(_cmpFeedback(feedback,nearAgents[i]->getFeedback()))*/
+					if(mutatedAffinity < nearAgents[i]->getMutatedAffinity())
 					{
 						setStatus(DIE);
 					}
@@ -332,12 +466,15 @@ bool WordAgent::select()
 					{
 						nearAgents[i]->setStatus(DIE);
 					}
+
 				}
 			}
                		/*communicating with local environment to insure global optimization*/
                 	_communicate();
 		}
 	}
+	//cout<<"selecting ";
+	_mapStatusToBehavior();
 
 	return true;
 }
@@ -345,14 +482,13 @@ bool WordAgent::select()
 bool WordAgent::_calFeedback()
 {
 	/*calculating feedback based on mutated receptors*/
-	if(getStatus() != MUTATE)
+	feedback = env->gainFeedback(this);
+	if(feedback.first > 0)
 	{
-		return false;
+                return true;
 	}
 
-	feedback = env->gainFeedback(this);
-
-	return true;
+	return false;
 }
 std::pair<int, double> WordAgent::getFeedback() const
 {
@@ -365,6 +501,7 @@ void WordAgent::_communicate()
 	if(env->update(this))
 	{
 		setStatus(MATURE);
+		domFeature = tmpFeature;
 	}
 	else
 	{
@@ -379,7 +516,7 @@ double WordAgent::getAgAffinity()
 
 bool WordAgent::_die()
 {
-	if(getStatus() == DIE)
+	if(status == DIE)
 	{
 		if(env->delPWordAgent(this))
 		{
@@ -389,53 +526,7 @@ bool WordAgent::_die()
 	return false;
 }
 
-bool WordAgent::_getStimulus()
-{
-	stimulus = 0.0;
-	/*get neighbour*/
-	std::vector<WordAgent * > nearAgents;
-	if(env->getNearbyAgents(this,nearAgents))
-	{
-		std::vector<int> rec;
-		double affinity;
-		for(size_t i = 0; i < nearAgents.size(); i++)
-		{
-			rec = nearAgents[i]->getRecReceptor();
-			affinity = _calAffinity(rec);
-			if(affinity > STIMULUS)
-			{
-				stimulus += affinity;
-			}
-		}
-	}
-
-	return true;
-}
-
-bool WordAgent::_getSuppression()
-{
-	suppression = 0.0;
-	/*get neighbour*/
-	std::vector<WordAgent *> nearAgents;
-	if(env->getNearbyAgents(this,nearAgents))
-	{
-		std::map<int, double> rec;
-		double affinity;
-		for(size_t i = 0; i < nearAgents.size(); i++)
-		{
-			rec = nearAgents[i]->getDomReceptor();
-			affinity = _calAffinity(rec);
-			if(affinity > SUPPRESS)
-			{
-				suppression += affinity;
-			}
-		}
-	}
-
-	return true;
-}
-
-double WordAgent::_calAffinity(std::map<int, double> receptor)
+double WordAgent::_calSuppressByBcell(std::map<int, double> receptor)
 {
 	double sum = 0.0;
 	map<int, double>::iterator it;
@@ -451,9 +542,14 @@ double WordAgent::_calAffinity(std::map<int, double> receptor)
 	return sum;
 }
 
-std::map<int, double> WordAgent::getDomReceptor() const
+std::map<int, double> WordAgent::getDomReceptor()
 {
 	return domFeature;
+}
+
+std::map<int, double> WordAgent::getTmpReceptor()
+{
+	return tmpFeature;
 }
 
 bool WordAgent::_updateSelf()
@@ -461,33 +557,18 @@ bool WordAgent::_updateSelf()
 	/*updating information of self receptor including:
 	domFeature
 	*/
-	std::map<int, double> rec = env->getInfor(this);
-	std::map<int, double>::iterator it;
-	std::map<int, double>::iterator tmp;
-	for(it = rec.begin(); it != rec.end(); it++)
-	{
-		tmp = domFeature.find(it->first);
-		if(tmp != domFeature.end())
-		{
-			if(domFeature[it->first] != it->second)
-			{
-				domFeature[it->first] = it->second;
-			}
-		}
-	}
+
 
 	return true;
 }
 
 bool WordAgent::_cmpFeedback(std::pair<int, double> sp, std::pair<int, double> dp)
 {
-	if(sp.first < dp.second)
 	{
 		return false;
 	}
 
 	return true;
-
 }
 
 int WordAgent::getCategory()
@@ -502,6 +583,8 @@ void WordAgent::gainSuppression(double suppress)
 
 bool WordAgent::_getRegulation()
 {
+	stimulus = 0.0;
+	suppression = 0.0;
 	/*get near agents*/
 	std::vector<WordAgent *> nearAgents;
 	if(env->getNearbyAgents(this, nearAgents))
@@ -509,13 +592,138 @@ bool WordAgent::_getRegulation()
 		double affinity = 0.0;
 		for(size_t i = 0; i < nearAgents.size(); i++)
 		{
-			if(nearAgents[i]->getStatus() != DIE)
+			if((nearAgents[i]->getStatus() != DIE) && (nearAgents[i]->getCategory() != ANTIGEN))
 			{
-				affinity = _calAffinity(nearAgents[i]->getRecReceptor());
+
+				affinity = _calStimulusByBcell(nearAgents[i]->getRecReceptor());
 				stimulus += affinity;
-				nearAgents[i]->gainSuppression(affinity);
+
+				affinity = _calSuppressByBcell(nearAgents[i]->getDomReceptor());
+				suppression += affinity;
 			}
 		}
 	}
 	return true;
+}
+
+double WordAgent::getMutatedAffinity()
+{
+	return mutatedAffinity;
+}
+
+int WordAgent::getConcentration()
+{
+	return _calConcentration();
+}
+
+int WordAgent::_calConcentration()
+{
+        //cout<<"calcu concen ";
+	concentration = 1;
+	vector<WordAgent * > nearAgents;
+	if(env->getNearbyAgents(this, nearAgents))
+	{
+		for(size_t i = 0; i < nearAgents.size(); i++)
+		{
+			if(nearAgents[i]->getStatus() != DIE)
+			{
+				if(ID == nearAgents[i]->getID())
+				{
+					concentration++;
+				}
+			}
+		}
+
+	}
+	//cout<<"finish calcu ";
+	return concentration;
+}
+
+void WordAgent::updateConcentration()
+{
+	/*gain neighbour*/
+	int sum = 0;
+	vector<WordAgent * > nearAgents;
+	if(env->getNearbyAgents(this, nearAgents))
+	{
+		for(size_t i = 0; i < nearAgents.size(); i++)
+		{
+			if(nearAgents[i]->getStatus() != DIE)
+			{
+				if(ID == nearAgents[i]->getID())
+				{
+					sum++;
+				}
+			}
+		}
+	}
+	concentration = sum;
+}
+
+void WordAgent::_mapStatusToBehavior()
+{
+	if(category == ANTIGEN)
+	{
+		/*selecting behavior according to status of antigen*/
+
+		switch(status)
+		{
+			case ACTIVE:
+				orders.push(MOVING);
+				break;
+			case DIE:
+				orders.push(DYING);
+				break;
+			default:
+				assert(0);
+		}
+	}
+	else
+	{
+		/*selecting behavior according to status of B cell*/
+		switch(status)
+		{
+			case ACTIVE:
+                                orders.push(MOVING);
+				break;
+			case MATCH:
+				orders.push(MUTATING);
+				break;
+			case MUTATE:
+				orders.push(SELECTING);
+				break;
+			case MATURE:
+				orders.push(CLONING);
+				break;
+			case DIE:
+				orders.push(DYING);
+				break;
+			default:
+				assert(0);
+		}
+	}
+}
+
+void WordAgent::setPosition(std::pair<int,int> p)
+{
+        position.first = p.first;
+        position.second = p.second;
+}
+
+bool WordAgent::setDomReceptor(std::map<int, double> & rec)
+{
+        for(map<int, double>::iterator it = rec.begin(); it != rec.end(); it++)
+        {
+                domFeature.insert((*it));
+        }
+        return true;
+}
+
+bool WordAgent::setRecReceptor(std::vector<int> & rec)
+{
+        for(size_t i = 0; i < rec.size(); i++)
+        {
+                recFeature.push_back(rec[i]);
+        }
+        return true;
 }

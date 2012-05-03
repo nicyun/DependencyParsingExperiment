@@ -4,15 +4,20 @@
 #include <ctime>
 
 #include "WordAgent.hpp"
-#include "Information.hpp"
 #include "Parameter.hpp"
+#include "Evaluation.hpp"
 
 using namespace std;
 
-Environment::Environment(int r, int c)
+Environment::Environment(int r, int c, Evaluation * evaluation)
 		: rows(r), cols(c)
 {
 	resetAgents();
+	eva = evaluation;
+	pAntigenNum = 0;
+	_initGrid();
+	badrow.clear();
+	badcol.clear();
 }
 
 int Environment::_calcSub(const pair<int, int> & pos) const
@@ -22,12 +27,25 @@ int Environment::_calcSub(const pair<int, int> & pos) const
 
 bool Environment::addPWordAgent(WordAgent * pWordAgent)
 {
-	pWordAgents[_calcSub(pWordAgent->getPosition())].insert(pWordAgent);
+        if(pWordAgent->getCategory() == ANTIGEN)
+        {
+                pAntigenNum++;
+                //cout<<pWordAgent->getPosition().first<<","<<pWordAgent->getPosition().second<<" ";
+        }
+        //cout<<pWordAgent->getPosition().first<<","<<pWordAgent->getPosition().second<<" ";
+
+        pWordAgents[_calcSub(pWordAgent->getPosition())].insert(pWordAgent);
 	return true;
 }
 
 bool Environment::delPWordAgent(WordAgent * pWordAgent)
 {
+        if(pWordAgent->getStatus() == ANTIGEN)
+        {
+                pAntigenNum--;
+                //cout<<_calcSub(pWordAgent->getPosition())<<" ";
+        }
+        //
 	pWordAgents[_calcSub(pWordAgent->getPosition())].erase(pWordAgent);
 	return true;
 }
@@ -60,10 +78,11 @@ bool Environment::getNearbyAgents(const WordAgent * pWordAgent,
 
 pair<int, int> Environment::getRandomPosition()
 {
-	srand(time(NULL));
-	int row = rand() % rows;
-	srand(time(NULL));
-	int col = rand() % cols;
+        srand(time(NULL));
+        int row = rand() % rows;
+        srand(time(NULL));
+        int col = rand() % cols;
+
 	return make_pair(row, col);
 }
 
@@ -79,7 +98,7 @@ bool Environment::yInRange(int y)
 
 bool Environment::update(WordAgent * pWordAgent)
 {
-	if(infor->getFeedback(pWordAgent).first < 0)
+	if(eva->calFeedback(sen,pWordAgent,fa).first < 0)
     	{
 		pWordAgent->setStatus(DIE);
 		return false;
@@ -88,12 +107,65 @@ bool Environment::update(WordAgent * pWordAgent)
 	return true;
 }
 
-std::map<int, double> Environment::getInfor(WordAgent * pWordAgent)
-{
-	return infor->getInfor(pWordAgent);
-}
-
 std::pair<int, double> Environment::gainFeedback(WordAgent * pWordAgent)
 {
-	return infor->getFeedback(pWordAgent);
+		return eva->calFeedback(sen,pWordAgent,fa);
+}
+
+std::vector<std::set<WordAgent *> > Environment::getAgents()
+{
+	return pWordAgents;
+}
+
+void Environment::gainSentenceInfor(const Sentence & sentence, const std::vector<int> & father)
+{
+	sen = sentence;
+	fa  = father;
+}
+
+int Environment::getAntigenNum()
+{
+        return pAntigenNum;
+}
+
+void Environment::_initGrid()
+{
+        vector<int> v;
+        v.resize(COLS);
+        for(size_t i = 0; i < ROWS; i++)
+        {
+                grid.push_back(v);
+        }
+}
+
+int Environment::getLocalAgentsNum(std::pair<int,int> pos)
+{
+        return grid[pos.first][pos.second];
+}
+void Environment::setLocalAgentsNum(std::pair<int,int> pos)
+{
+        grid[pos.first][pos.second]++;
+        if(grid[pos.first][pos.second] == MAXNUMAGENT)
+        {
+                badrow.push_back(pos.first);
+                badcol.push_back(pos.second);
+        }
+}
+
+std::vector<vector<int> > Environment::getGrid()
+{
+        return grid;
+}
+
+void Environment::testSub(int a)
+{
+        for(int i = 0; i < a; i++)
+        {
+                for(int j = 0; j < a; j++)
+                {
+                        cout<<_calcSub(make_pair(i,j))<<" ";
+                }
+                cout<<endl;
+        }
+        cout<<endl;
 }
