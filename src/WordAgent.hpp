@@ -8,6 +8,7 @@
 #include <set>
 
 #include "Environment.hpp"
+class Environment;
 
 class WordAgent{
 private:
@@ -30,12 +31,15 @@ private:
 	double suppression;
 	int concentration;
 	std::pair<int, double> feedback;
+	bool isInteractedWithAntigen;
 public:
-	WordAgent(int id, 
+	WordAgent(int id,
 			Environment * environment,
 			const std::pair<int, int> & pos, int cat, int con);
 	bool run();
 	int getID();
+	bool addDomFeature(const std::vector<int> & feature);
+	bool addRecFeature(const std::vector<int> & feature);
 
 	int getCategory();
 
@@ -47,14 +51,19 @@ public:
 	double getAgAffinity();
 	double getMutatedAffinity();
 	std::pair<int, int> getPosition() const;
-	std::map<int, double> getDomReceptor() const;
+	void setPosition(std::pair<int,int> p);
+	std::map<int, double> getDomReceptor();
+	std::map<int, double> getTmpReceptor();
+
+	bool setDomReceptor(std::map<int, double> & rec);
+	bool setRecReceptor(std::vector<int> & rec);
+
 	std::vector<int> getRecReceptor() const;
 	std::pair<int, double> getFeedback() const;
 
 	int getConcentration();
 	void updateConcentration();
 
-	
 private:
 	bool _doMove();
 	bool _interact();
@@ -65,7 +74,7 @@ private:
 	bool _die();
 
 	/*sence*/
-	
+
 	bool _getRegulation();
 
 	int _calConcentration();
@@ -75,13 +84,13 @@ private:
 	bool _updateSelf();
 	bool _calFeedback();
 
-	double _calAffinity(std::vector<int> receptor);
+	double _calAffinity(std::vector<int> receptor, int & matchSize);
 	double _calMutatedAffinity(std::vector<int> receptor);
 	double _calSuppressByBcell(std::map<int, double> receptor);
 	double _calStimulusByBcell(std::vector<int> receptor);
 
 	bool _cmpFeedback(std::pair<int, double> sp, std::pair<int, double> dp);
-	
+
 	void _mapStatusToBehavior();
 };
 

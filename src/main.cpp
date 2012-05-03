@@ -16,6 +16,6 @@ int main(int argc, char * argv[])
 	dp.predictFile(argv[2], argv[3]);
 	cout << "predicted OK" << endl;
 */
-	testWordAgentInit();
+	testTrain();
 	return 0;
 }

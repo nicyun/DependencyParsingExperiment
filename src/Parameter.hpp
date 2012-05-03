@@ -3,7 +3,7 @@
 
 /*global variables*/
 
-#define LEARNTIMES	20	/*times of online learning*/
+#define LEARNTIMES	1	/*times of online learning*/
 #define BETA		0.2	/*beta for mutation*/
 #define DETA		0.01	/*quantity changed by mutation*/
 
@@ -31,8 +31,16 @@
 #define ANTIGEN		0	/*Antigen word-agent*/
 #define BCELL		1	/*B cell word-agent*/
 
+
 #define MUTATEPRO   	0.1 	/*Mutated probability*/
 
 #define PRECISION	1000	/*3 points after 0: 0.000*/
+
+// Enviroment scale
+#define ROWS 20
+#define COLS 20
+
+#define AGQUANTITY	10	/*quantity of antigens*/
+#define MAXNUMAGENT     1000    /*local maximum number of agents*/
 
 #endif
